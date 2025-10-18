@@ -9,7 +9,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
 
-  Wire.begin(19, 20);            // your RTC pins
+  Wire.begin(42, 41);            // your RTC pins
   if (!rtc.begin()) { Serial.println("RTC not found"); while(1){} }
 
   FlashLoggerConfig cfg;

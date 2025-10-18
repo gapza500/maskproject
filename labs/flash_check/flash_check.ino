@@ -1,6 +1,6 @@
 #include <SPI.h>
 
-#define FLASH_CS 4   // Chip Select (choose a free pin)
+#define FLASH_CS    // Chip Select (choose a free pin)
 
 // W25Q64 commands
 #define CMD_RDID  0x9F
