@@ -99,8 +99,23 @@ bool FlashLogger::begin(const FlashLoggerConfig& cfg) {
   setOutputFormat(cfg.defaultOut);
   setCsvColumns(cfg.csvColumns);
 
+    if (!loadFactoryInfo()) {
+  memset(&_factory, 0, sizeof(_factory));
+  _factory.magic = 0x46414354UL; // 'FACT'
+  strncpy(_factory.model, "AirMonitor C6", sizeof(_factory.model)-1);
+  strncpy(_factory.flashModel, "W25Q64JV", sizeof(_factory.flashModel)-1);
+  strncpy(_factory.deviceId, "000000000000", sizeof(_factory.deviceId)-1);
+  _factory.firstDayID = dayIDFromDateTime(_rtc->now());
+  _factory.defaultDateStyle = (uint8_t)_dateStyle;
+  saveFactoryInfo();
+}
+
   // Set factory info once if empty (reuse your existing setFactoryInfo logic)
   setFactoryInfo(cfg.model, cfg.flashModel, cfg.deviceId);
+
+  _factory.bootCounter++;
+  saveFactoryInfo();
+  _generation = _factory.bootCounter;
 
   // Ready
   if (_cfg.enableShell) Serial.println("[FlashLogger] shell enabled (ls/cd/print/q/fmt/cursor/export/reset/gc/stats/factory)");

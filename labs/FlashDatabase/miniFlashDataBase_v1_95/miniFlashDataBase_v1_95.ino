@@ -28,6 +28,8 @@ void setup() {
   cfg.resetCode12    = "847291506314";
   cfg.enableShell    = true;
 
+//  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
   if (!logger.begin(cfg)) {
     Serial.println("FlashLogger init failed");
     while(1){}
