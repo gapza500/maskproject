@@ -10,13 +10,14 @@
 // =========================
 #define PAGE_SIZE     256
 #define SECTOR_SIZE   4096
-#define MAX_SECTORS   2048   // 8MB / 4KB
+#define MAX_SECTORS   4096   // 16MB / 4KB
 
 // Winbond W25Qxx
 #define CMD_READ      0x03
 #define CMD_PP        0x02
 #define CMD_WREN      0x06
 #define CMD_SE        0x20
+#define CMD_RDSR1     0x05
 
 // =========================
 // On-flash structures
@@ -332,6 +333,8 @@ private:
 
   // ===== low level flash =====
   void writeEnable();
+  uint8_t readStatusReg();
+  void waitWhileBusy(uint32_t timeout_ms = 0);
   void readData(uint32_t addr, uint8_t* buf, uint16_t len);
   void pageProgram(uint32_t addr, const uint8_t* buf, uint32_t len); // chunk-safe
   void sectorErase(uint32_t addr, bool countErase = true);

@@ -1,69 +1,136 @@
+/*
+  miniFlashDataBase_v1_952_final.ino  — ESP32-S3 / ESP32-C6 + W25Q128
+
+  Requires in FlashLogger.h:  #define MAX_SECTORS 4096
+*/
+
+#include <Arduino.h>
 #include <Wire.h>
+#include <SPI.h>
 #include <RTClib.h>
 #include "FlashLogger.h"
 
-RTC_DS3231 rtc;
-FlashLogger logger;
+// ===== Board profiles =====
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+// Maker Feather AIoT S3
+static const int PIN_FLASH_SCK   = 17;
+static const int PIN_FLASH_MISO  = 18;
+static const int PIN_FLASH_MOSI  = 8;
+static const int PIN_FLASH_CS    = 7;
+static const int PIN_VPERIPH_EN  = 11;   // power rail enable
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+static const int PIN_FLASH_SCK   = 17;
+static const int PIN_FLASH_MISO  = 18;
+static const int PIN_FLASH_MOSI  = 8;
+static const int PIN_FLASH_CS    = 4;
+static const int PIN_VPERIPH_EN  = -1;
+#else
+static const int PIN_FLASH_SCK   = 17;
+static const int PIN_FLASH_MISO  = 18;
+static const int PIN_FLASH_MOSI  = 8;
+static const int PIN_FLASH_CS    = 7;
+static const int PIN_VPERIPH_EN  = -1;
+#endif
+
+// ===== Globals =====
+RTC_DS3231   rtc;
+// IMPORTANT: use CS in ctor so library’s _cs is correct even inside low-level ops.
+FlashLogger  logger(PIN_FLASH_CS);
+
+// ===== W25Q128 unprotect (no name collisions) =====
+namespace w25x {
+  constexpr uint8_t RDSR1 = 0x05, RDSR2 = 0x35, WRSR = 0x01, WREN = 0x06;
+  inline void csLow()  { digitalWrite(PIN_FLASH_CS, LOW); }
+  inline void csHigh() { digitalWrite(PIN_FLASH_CS, HIGH); }
+  inline uint8_t rd(uint8_t cmd){ SPI.beginTransaction(SPISettings(8'000'000,MSBFIRST,SPI_MODE0)); csLow(); SPI.transfer(cmd); uint8_t v=SPI.transfer(0); csHigh(); SPI.endTransaction(); return v; }
+  inline void wren(){ SPI.beginTransaction(SPISettings(8'000'000,MSBFIRST,SPI_MODE0)); csLow(); SPI.transfer(WREN); csHigh(); SPI.endTransaction(); }
+  inline void wrsr(uint8_t sr1,uint8_t sr2){ SPI.beginTransaction(SPISettings(8'000'000,MSBFIRST,SPI_MODE0)); csLow(); SPI.transfer(WRSR); SPI.transfer(sr1); SPI.transfer(sr2); csHigh(); SPI.endTransaction(); }
+  inline void waitWip(){ while (rd(RDSR1)&0x01) delay(1); }
+  inline void globalUnprotect(){
+    uint8_t sr1b=rd(RDSR1), sr2b=rd(RDSR2);
+    uint8_t sr1 = sr1b & ~((1<<7)|(1<<5)|(1<<4)|(1<<3)|(1<<2)); // SRP0,TB,BP2..0 = 0
+    uint8_t sr2 = sr2b & ~(1<<6);                                // CMP = 0
+    wren(); wrsr(sr1,sr2); waitWip();
+    Serial.printf("[unprotect] SR1 %02X->%02X, SR2 %02X->%02X\n", sr1b,sr1,sr2b,sr2);
+  }
+}
+
+// ===== small serial shell =====
+String readLine(){
+  static String buf;
+  while (Serial.available()){
+    char c=(char)Serial.read();
+    if (c=='\r') continue;
+    if (c=='\n'){ String out=buf; buf=""; return out; }
+    buf+=c;
+  }
+  return String();
+}
+
+unsigned long lastBeatMs=0;
 
 void setup() {
   Serial.begin(115200);
   delay(300);
+  Serial.println("\nBooting...");
 
-  Wire.begin(42, 41);            // your RTC pins
-  if (!rtc.begin()) { Serial.println("RTC not found"); while(1){} }
+  // Power rail (S3)
+  if (PIN_VPERIPH_EN >= 0) { pinMode(PIN_VPERIPH_EN, OUTPUT); digitalWrite(PIN_VPERIPH_EN, HIGH); }
 
+  // SPI lines
+  pinMode(PIN_FLASH_CS, OUTPUT); digitalWrite(PIN_FLASH_CS, HIGH);
+  SPI.begin(PIN_FLASH_SCK, PIN_FLASH_MISO, PIN_FLASH_MOSI, PIN_FLASH_CS);
+  delay(10);
+
+  // Unprotect top/bottom blocks
+  w25x::globalUnprotect();
+
+  // I2C + RTC
+  Wire.begin();
+  if (!rtc.begin()) { Serial.println("[rtc] NOT found"); }
+  else {
+    Serial.println("[rtc] ok");
+    if (rtc.lostPower()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Serial.println("[rtc] time set"); }
+  }
+
+  // Logger config (note: library still uses _cs internally; ctor fixed that)
   FlashLoggerConfig cfg;
   cfg.rtc            = &rtc;
-  cfg.spi_cs_pin     = 7;
-  cfg.dateStyle      = DATE_THAI;       // 1=Thai, 2=ISO, 3=US
-  cfg.totalSizeBytes = 8*1024*1024;     // adapt if different
-  cfg.sectorSize     = 4096;
-  cfg.retentionDays  = 7;
-  cfg.dailyBytesHint = 3500;
-  cfg.defaultOut     = OUT_JSONL;
-  cfg.csvColumns     = "ts,bat,temp";
+  cfg.spi_sck_pin    = PIN_FLASH_SCK;
+  cfg.spi_miso_pin   = PIN_FLASH_MISO;
+  cfg.spi_mosi_pin   = PIN_FLASH_MOSI;
+  cfg.spi_cs_pin     = PIN_FLASH_CS;
+  cfg.spi_clock_hz   = 8'000'000;                 // conservative
+  cfg.totalSizeBytes = 16UL * 1024UL * 1024UL;    // W25Q128 (16 MB)
   cfg.model          = "AirMonitor C6";
-  cfg.flashModel     = "W25Q64JV";
+  cfg.flashModel     = "W25Q128JV";
   cfg.deviceId       = "001245678912";
-  cfg.resetCode12    = "847291506314";
+  cfg.csvColumns     = "ts,bat,temp";
   cfg.enableShell    = true;
 
-  //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-
-  if (!logger.begin(cfg)) {
-    Serial.println("FlashLogger init failed");
-    while(1){}
+  Serial.println("[chk] about to begin logger...");
+  if (!logger.begin(cfg)) {                        // begin(cfg) does NOT scan/select in this lib
+    Serial.println("[err] logger.begin() failed."); return;
   }
+  Serial.println("[ok] logger.begin() returned.");
 
-  // quick smoke
-  logger.printFactoryInfo();
-}
+  // Build index + anchors + pick today’s sector + write head
+  logger.rescanAndRefresh(true, false);            // mandatory with this lib’s begin(cfg) :contentReference[oaicite:3]{index=3}
 
-static String readLine(Stream& s) {
-  static String buf;
-  while (s.available()) {
-    char c = (char)s.read();
-    if (c == '\r') continue;
-    if (c == '\n') { String out = buf; buf = ""; return out; }
-    buf += c;
-  }
-  return "";
+  // First write (creates day if needed)
+  String j = "{\"ts\":" + String(rtc.now().unixtime()) + ",\"hb\":1}";
+  if (!logger.append(j)) Serial.println("[append] failed (sector not ready)");
+
+  Serial.println("[ready] cmds: ls / print / stats / factory / export 10 / gc / reset");
 }
 
 void loop() {
-  // Log something periodically
-  static uint32_t last=0;
-  if (millis()-last > 10000) {
-    last = millis();
-    logger.append("{\"temp\":25.9,\"hum\":60,\"bat\":87}");
+  String cmd = readLine();
+  if (cmd.length()) logger.handleCommand(cmd, Serial);
+
+  if (millis() - lastBeatMs >= 10'000UL) {
+    lastBeatMs = millis();
+    String j = "{\"ts\":" + String(rtc.now().unixtime()) + ",\"hb\":1}";
+    logger.append(j);
   }
-
-  // Shell (one-liner handling)
-  String line = readLine(Serial);
-  if (line.length()) logger.handleCommand(line, Serial);
-
-  // You can also use programmatic queries anywhere:
-  //   - latest 10
-  //   - filtered week
-  //   - export since cursor
 }

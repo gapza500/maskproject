@@ -79,36 +79,45 @@ bool FlashLogger::begin(const FlashLoggerConfig& cfg) {
   _rtc = cfg.rtc;
   if (!_rtc) { Serial.println("FlashLogger: RTC is required"); return false; }
 
+  if (cfg.spi_cs_pin >= 0) _cs = (uint8_t)cfg.spi_cs_pin;
+
   // SPI setup (respect custom pins if provided)
-  // If your code already does SPI.begin() somewhere, keep that; else:
   if (cfg.spi_sck_pin >= 0 && cfg.spi_mosi_pin >= 0 && cfg.spi_miso_pin >= 0) {
     SPI.begin(cfg.spi_sck_pin, cfg.spi_miso_pin, cfg.spi_mosi_pin, cfg.spi_cs_pin);
   } else {
     SPI.begin(); // defaults
   }
-  pinMode(cfg.spi_cs_pin, OUTPUT);
-  digitalWrite(cfg.spi_cs_pin, HIGH);
+  pinMode(_cs, OUTPUT);
+  digitalWrite(_cs, HIGH);
+  delay(5);
 
-  // flash init & scan (reuse your existing code)
-  // - probe JEDEC, verify size, set total/sector sizes if you keep variables
-  // - scanAllSectorsBuildIndex();
-  // - selectOrCreateTodaySector();
-  // - findLastWritePositionInSector(...);
-
-  setDateStyle((uint8_t)cfg.dateStyle);
-  setOutputFormat(cfg.defaultOut);
-  setCsvColumns(cfg.csvColumns);
+  for (int i = 0; i < MAX_SECTORS; ++i) _index[i] = {false, 0, false, 0};
 
   if (!loadFactoryInfo()) {
     memset(&_factory, 0, sizeof(_factory));
     _factory.magic = 0x46414354UL; // 'FACT'
-    strncpy(_factory.model, "AirMonitor C6", sizeof(_factory.model)-1);
-    strncpy(_factory.flashModel, "W25Q64JV", sizeof(_factory.flashModel)-1);
-    strncpy(_factory.deviceId, "000000000000", sizeof(_factory.deviceId)-1);
+    strncpy(_factory.model, "AirMonitor C6", sizeof(_factory.model) - 1);
+    strncpy(_factory.flashModel, "W25Q64JV", sizeof(_factory.flashModel) - 1);
+    strncpy(_factory.deviceId, "000000000000", sizeof(_factory.deviceId) - 1);
     _factory.firstDayID = dayIDFromDateTime(_rtc->now());
     _factory.defaultDateStyle = (uint8_t)_dateStyle;
+    _factory.totalEraseOps = 0;
+    _factory.bootCounter = 0;
+    _factory.startHint = 0;
+    _factory.badCount = 0;
+    sectorErase(sectorBaseAddr(FACTORY_SECTOR), false);
     saveFactoryInfo();
+  } else {
+    if (_factory.defaultDateStyle >= 1 && _factory.defaultDateStyle <= 3)
+      _dateStyle = (DateStyle)_factory.defaultDateStyle;
   }
+
+  if (cfg.dateStyle >= DATE_THAI && cfg.dateStyle <= DATE_US) {
+    _dateStyle = cfg.dateStyle;
+    _factory.defaultDateStyle = (uint8_t)_dateStyle;
+  }
+  setOutputFormat(cfg.defaultOut);
+  setCsvColumns(cfg.csvColumns);
 
   // Set factory info once if empty (reuse your existing setFactoryInfo logic)
   setFactoryInfo(cfg.model, cfg.flashModel, cfg.deviceId);
@@ -117,8 +126,27 @@ bool FlashLogger::begin(const FlashLoggerConfig& cfg) {
   saveFactoryInfo();
   _generation = _factory.bootCounter;
 
-  // Ready
+  scanAllSectorsBuildIndex();
+
+  DateTime now = _rtc->now();
+  _currentDay = dayIDFromDateTime(now);
+
+  selectOrCreateTodaySector();
+  if (_currentSector >= 0) {
+    findLastWritePositionInSector(_currentSector);
+    _writeAddr = _index[_currentSector].writePtr;
+  } else {
+    Serial.println("FlashLogger: no sector available!");
+    return false;
+  }
+
+  _seqCounter = 0;
+  _todayBytes = 0;
+  _lowSpace = false;
+
   if (_cfg.enableShell) Serial.println("[FlashLogger] shell enabled (ls/cd/print/q/fmt/cursor/export/reset/gc/stats/factory)");
+  Serial.printf("FlashLogger v1.8 ready. Gen=%lu Day=%u Sector=%d Next=0x%06lX\n",
+                (unsigned long)_generation, _currentDay, _currentSector, _writeAddr);
   return true;
 }
 
@@ -347,6 +375,26 @@ void FlashLogger::writeEnable() {
   SPI.endTransaction();
 }
 
+uint8_t FlashLogger::readStatusReg() {
+  const uint32_t hz = _cfg.spi_clock_hz ? _cfg.spi_clock_hz : 40000000;
+  SPI.beginTransaction(SPISettings(hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_cs, LOW);
+  SPI.transfer(CMD_RDSR1);
+  uint8_t sr = SPI.transfer(0x00);
+  digitalWrite(_cs, HIGH);
+  SPI.endTransaction();
+  return sr;
+}
+
+void FlashLogger::waitWhileBusy(uint32_t timeout_ms) {
+  uint32_t start = millis();
+  while (true) {
+    if ((readStatusReg() & 0x01) == 0) break;
+    delay(1);
+    if (timeout_ms && (millis() - start) >= timeout_ms) break;
+  }
+}
+
 void FlashLogger::readData(uint32_t addr, uint8_t* buf, uint16_t len) {
   const uint32_t hz = _cfg.spi_clock_hz ? _cfg.spi_clock_hz : 40000000;
   SPI.beginTransaction(SPISettings(hz, MSBFIRST, SPI_MODE0));
@@ -378,7 +426,7 @@ void FlashLogger::pageProgram(uint32_t addr, const uint8_t* buf, uint32_t len) {
     for (uint32_t i = 0; i < n; ++i) SPI.transfer(buf[i]);
     digitalWrite(_cs, HIGH);
     SPI.endTransaction();
-    delay(3);
+    waitWhileBusy(20);
 
     addr += n; buf += n; len -= n;
     yield();
@@ -396,7 +444,7 @@ void FlashLogger::sectorErase(uint32_t addr, bool countErase) {
   SPI.transfer(addr         & 0xFF);
   digitalWrite(_cs, HIGH);
   SPI.endTransaction();
-  delay(60);
+  waitWhileBusy(1000);
 
   // VERIFY ERASE; quarantine if failed
   if (!verifyErase(addr)) {
