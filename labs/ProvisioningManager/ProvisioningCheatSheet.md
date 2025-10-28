@@ -17,7 +17,7 @@ void loop() {
 }
 ```
 
-> Demo sketch: `apps/ProvisioningManagerDemo/ProvisioningManagerDemo.ino` shows this wiring and includes the `.cpp` directly so it compiles without moving files. For production, copy `ProvisioningManager.{h,cpp}` into your sketch (or create a proper library).
+> Demo sketch: `labs/ProvisioningManager/examples/ProvisioningTest/ProvisioningTest.ino` shows this wiring, while `apps/ProvisioningSetup/ProvisioningSetup.ino` is the minimal main-control stub. Each includes the `.cpp` directly so it compiles without moving files. For production, copy `ProvisioningManager.{h,cpp}` into your sketch (or create a proper library).
 
 **ProvisioningConfig fields**
 - `apSsid`, `apPassword` — captive portal credentials (password must be ≥ 8 chars).
