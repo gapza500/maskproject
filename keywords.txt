@@ -1,0 +1,8 @@
+FlashLogger	KEYWORD1
+FlashLoggerConfig	KEYWORD1
+SyncCursor	KEYWORD2
+QuerySpec	KEYWORD2
+FieldPredicate	KEYWORD2
+flashlogger_upload_ndjson	KEYWORD2
+flashlogger_upload_csv	KEYWORD2
+FlashLoggerUploadPolicy	KEYWORD2

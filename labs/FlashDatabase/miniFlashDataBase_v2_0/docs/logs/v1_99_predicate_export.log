@@ -1,0 +1,58 @@
+FACTORY RESET: done.
+[rtc] target=1735733483 now=1735733483
+APPEND @0x03700C (sec 55) len=48
+[rtc] target=1735733543 now=1735733543
+APPEND @0x03704B (sec 55) len=48
+[rtc] target=1735733603 now=1735733603
+APPEND @0x03708A (sec 55) len=48
+[rtc] target=1735733663 now=1735733663
+APPEND @0x0370C9 (sec 55) len=48
+[rtc] target=1735733723 now=1735733723
+APPEND @0x037108 (sec 55) len=48
+
+[test] predicates (bat<=20)
+{"ts":1735733543,"temp":26.0,"bat":18.0,"hb":1}
+{"ts":1735733603,"temp":27.5,"bat":15.0,"hb":1}
+{"ts":1735733723,"temp":30.5,"bat":10.0,"hb":1}
+
+[test] exportSinceWithMeta
+
+Sectors for day 9132:
+#  SECTOR  BYTES     STATUS   TS_RANGE
+0  55      315      OPEN     789048683..789048923
+[upload] seq=1 ts=789048743 payload={"ts":1735733543,"temp":26.0,"bat":18.0,"hb":1}
+
+[upload] seq=2 ts=789048803 payload={"ts":1735733603,"temp":27.5,"bat":15.0,"hb":1}
+
+[upload] seq=3 ts=789048863 payload={"ts":1735733663,"temp":29.0,"bat":22.0,"hb":1}
+
+[upload] seq=4 ts=789048923 payload={"ts":1735733723,"temp":30.5,"bat":10.0,"hb":1}
+
+
+[test] simulate restart
+
+Sectors for day 9132:
+#  SECTOR  BYTES     STATUS   TS_RANGE
+0  55      315      OPEN     789048683..789048923
+
+[test] predicates (bat<=20)
+{"ts":1735733543,"temp":26.0,"bat":18.0,"hb":1}
+{"ts":1735733603,"temp":27.5,"bat":15.0,"hb":1}
+{"ts":1735733723,"temp":30.5,"bat":10.0,"hb":1}
+
+[test] exportSinceWithMeta
+
+Sectors for day 9132:
+#  SECTOR  BYTES     STATUS   TS_RANGE
+0  55      315      OPEN     789048683..789048923
+
+Sectors for day 9132:
+#  SECTOR  BYTES     STATUS   TS_RANGE
+0  55      315      OPEN     789048683..789048923
+[upload] seq=1 ts=789048743 payload={"ts":1735733543,"temp":26.0,"bat":18.0,"hb":1}
+
+[upload] seq=2 ts=789048803 payload={"ts":1735733603,"temp":27.5,"bat":15.0,"hb":1}
+
+[upload] seq=3 ts=789048863 payload={"ts":1735733663,"temp":29.0,"bat":22.0,"hb":1}
+
+[upload] seq=4 ts=789048923 payload={"ts":1735733723,"temp":30.5,"bat":10.0,"hb":1}

@@ -5,6 +5,7 @@
 // ===== User pins (ESP32-C6 example; adjust if needed) =====
 const int I2C_SDA_PIN = 19;
 const int I2C_SCL_PIN = 20;
+const int VP = -1;
 
 // ===== Constants =====
 const uint8_t SEN66_ADDR = 0x6B;        // SEN6x I2C address (7-bit)
@@ -35,6 +36,10 @@ void setup() {
     while (!Serial) { delay(10); }
     Serial.println();
     Serial.println(F("=== SEN66 Checker ==="));
+
+    pinMode(VP, OUTPUT);
+    digitalWrite(VP, HIGH);   // turn ON 3V3 peripherals rail
+    delay(50);                   // let rail settle
 
     // --- I2C init ---
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);

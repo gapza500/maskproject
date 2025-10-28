@@ -1,5 +1,5 @@
 /*
-  miniFlashDataBase_v1_99.ino — ESP32-S3 / ESP32-C6 + W25Q128
+  miniFlashDataBase_v2_0.ino — ESP32-S3 / ESP32-C6 + W25Q128
 
   Requires in FlashLogger.h:  #define MAX_SECTORS 4096
 */

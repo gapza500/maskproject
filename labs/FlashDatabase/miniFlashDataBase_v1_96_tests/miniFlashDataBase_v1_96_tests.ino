@@ -5,6 +5,7 @@
 #include "../../modules/cytron_maker_feather_aiot_s3/pins_cytron_maker_feather_aiot_s3.h"
 #include "../../modules/dfrobot_beetle_esp32c6_mini/pins_dfrobot_beetle_esp32c6_mini.h"
 #include "../FlashDatabase/miniFlashDataBase_v1_96/FlashLogger.h"
+#include "../FlashDatabase/miniFlashDataBase_v1_96/FlashLogger.cpp"
 
 #if defined(CONFIG_IDF_TARGET_ESP32S3)
 namespace board = board_pins::cytron_maker_feather_aiot_s3;

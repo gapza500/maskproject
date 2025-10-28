@@ -1,0 +1,20 @@
+# Simulated battery guard test (MAX17048 mocked via software trigger)
+
+APPEND @0x03770F (sec 55) len=25
+APPEND @0x03775F (sec 55) len=25
+{"meta":"battery_ok","soc":78.5,"ts":1735734000}
+[ready] cmds: ls / print / stats / factory / export 10 / gc / reset
+
+# Force mock low-SOC event (MAX17048 reading dropped below threshold)
+{"meta":"battery_low","soc":14.2,"ts":1735734600}
+FlashLogger: battery guard active; append blocked.
+FlashLogger: battery guard active; append blocked.
+
+# Simulate charger connected, SOC recovers above threshold
+{"meta":"battery_ok","soc":42.7,"ts":1735735200}
+APPEND @0x037787 (sec 55) len=25
+APPEND @0x0377AF (sec 55) len=25
+
+#  DATE        DAYID  SECT  BYTES     STATUS  RANGE
+0  01/01/25    9132   1     2065      OPEN    789048683..789051921
+APPEND @0x0377D7 (sec 55) len=25

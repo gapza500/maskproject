@@ -10,10 +10,14 @@ Include the header that matches your target board, for example:
 
 ```cpp
 #include "../../../modules/cytron_maker_feather_aiot_s3/pins_cytron_maker_feather_aiot_s3.h"
+#include "../../../modules/max17048/Max17048.h"
 
 using namespace board_pins::cytron_maker_feather_aiot_s3;
 
-// use FLASH_SCK, FLASH_MISO, etc.
+Max17048 fuel;
+if (fuel.begin()) {
+  float soc = fuel.readPercent();
+}
 ```
 
 When adding a new hardware revision or board, follow the same structure:

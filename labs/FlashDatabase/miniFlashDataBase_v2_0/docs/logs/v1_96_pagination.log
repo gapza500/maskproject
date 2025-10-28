@@ -1,0 +1,20 @@
+[0;32mI (99) boot:  4 uf2              factory app      00 00 0Sector=55 Next=0x037147
+[ok] logger.begin() returned.
+APPEND @0x037147 (sec 55) len=25
+[ready] cmds: ls / print / stats / factory / export 10 / gc / reset
+APPEND @0x03716F (sec 55) len=25
+APPEND @0x037197 (sec 55) len=25
+APPEND @0x0371BF (sec 55) len=25
+APPEND @0x0371E7 (sec 55) len=25
+APPEND @0x03720F (sec 55) len=25
+APPEND @0x037237 (sec 55) len=25
+[0;32mI (839) boot: ESP-IDF bbe2a1bf3 2nd stage bootloader[0m
+ (ls/cd/print/q/fmt/cursor/export/reset/gc/stats/factory)
+FlashLogger v1.8 ready. Gen=83 Day=9132 Sector=55 Next=0x037287
+[ok] logger.begin() returned.
+APPEND @0x037287 (sec 55) len=25
+[ready] cmds: ls / print / stats / factory / export 10 / gc / reset
+APPEND @0x0372AF (sec 55) len=25
+APPEND @0x0372D7 (sec 55) len=25
+APPEND @0x0372FF (sec 55) len=25
+APPEND @0x037327 (sec 55) len=25

@@ -2,8 +2,8 @@
 
 // --- PIN CONFIGURATION ---
 // Based on the code you were using.
-const int I2C_SDA_PIN = 19;
-const int I2C_SCL_PIN = 20;
+const int I2C_SDA_PIN = 42;
+const int I2C_SCL_PIN = 41;
 
 void setup() {
   Serial.begin(115200);
