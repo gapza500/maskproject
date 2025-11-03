@@ -1,5 +1,5 @@
-#include "../../ProvisioningManager.h"
-#include "../../ProvisioningManager.cpp"  // Compile implementation within this sketch for convenience.
+#include "../../../../apps/ProvisioningManager/ProvisioningManager.h"
+#include "../../../../apps/ProvisioningManager/ProvisioningManager.cpp"  // Compile implementation within this sketch for convenience.
 
 namespace {
 ProvisioningConfig config = {

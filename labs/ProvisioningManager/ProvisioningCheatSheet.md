@@ -17,7 +17,7 @@ void loop() {
 }
 ```
 
-> Demo sketch: `labs/ProvisioningManager/examples/ProvisioningTest/ProvisioningTest.ino` shows this wiring, while `apps/ProvisioningSetup/ProvisioningSetup.ino` is the minimal main-control stub. Each includes the `.cpp` directly so it compiles without moving files. For production, copy `ProvisioningManager.{h,cpp}` into your sketch (or create a proper library).
+> Demo sketch: `labs/ProvisioningManager/examples/ProvisioningTest/ProvisioningTest.ino` shows this wiring. When using the manager from another sketch under `apps/`, include it via `#include "../ProvisioningManager/ProvisioningManager.h"` (and the `.cpp` alongside) or copy the files into that sketch folder for production.
 
 **ProvisioningConfig fields**
 - `apSsid`, `apPassword` — captive portal credentials (password must be ≥ 8 chars).

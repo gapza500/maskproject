@@ -1,20 +1,19 @@
 # ProvisioningManager Module
 
-This lab (`labs/ProvisioningManager`) contains a self-contained Wi-Fi provisioning helper for ESP32-class boards. It spins up a captive portal, saves credentials to NVS, and transitions to STA mode while broadcasting a completion event that a companion mobile app can consume. The original `labs/APwifi` sketch remains untouched for reference.
+This lab (`labs/ProvisioningManager`) documents a self-contained Wi-Fi provisioning helper for ESP32-class boards. Implementation files now live under `apps/ProvisioningManager/` so they can be pulled directly into your main control app. The original `labs/APwifi` sketch remains untouched for reference.
 
 ## Files
-- `ProvisioningManager.h/.cpp` — reusable provisioning component.
+- `apps/ProvisioningManager/ProvisioningManager.h/.cpp` — reusable provisioning component (no `.ino`, ready for integration).
 - `ProvisioningCheatSheet.md` — quick reference for configuration, HTTP endpoints, serial commands, and UDP events.
 - `examples/ProvisioningTest/ProvisioningTest.ino` — serial-friendly demo to exercise the portal.
-- `apps/ProvisioningSetup/ProvisioningSetup.ino` — minimal wiring ready to drop into a main control sketch.
 
 ## Using the manager in your sketch
-1. Include the header: `#include "ProvisioningManager.h"` (adjust path if used from another folder, e.g., the main stub uses `../../labs/ProvisioningManager/ProvisioningManager.h`).
+1. Include the header: `#include "ProvisioningManager.h"` (adjust path if used from another folder, e.g., from a sketch under `apps/...` use `#include "../ProvisioningManager/ProvisioningManager.h"`).
 2. Fill out a `ProvisioningConfig` with your AP SSID, password, LED pin, and timing preferences.
 3. Instantiate `ProvisioningManager mgr(cfg);`.
 4. Call `mgr.begin();` in `setup()` and `mgr.loop();` from `loop()`.
 
-> **Note:** Both the demo and main-control stub include `ProvisioningManager.cpp` directly so the Arduino builder compiles the implementation. In production code move `ProvisioningManager.{h,cpp}` into your sketch folder (or into `libraries/`) so the `.cpp` is built automatically.
+> **Note:** When including from another sketch, also `#include "../ProvisioningManager/ProvisioningManager.cpp"` (or equivalent path) so the Arduino builder compiles the implementation. For production, copy `ProvisioningManager.{h,cpp}` into that sketch folder (or create a proper library) and drop the explicit `.cpp` include.
 
 The manager automatically:
 - Hosts a captive portal web app (`/`, `/scan`, `/save`, `/status`).
