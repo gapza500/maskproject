@@ -1,14 +1,14 @@
 # ProvisioningManager Module
 
-This lab (`labs/ProvisioningManager`) documents a self-contained Wi-Fi provisioning helper for ESP32-class boards. Implementation files now live under `apps/ProvisioningManager/` so they can be pulled directly into your main control app. The original `labs/APwifi` sketch remains untouched for reference.
+This lab (`labs/ProvisioningManager`) documents a self-contained Wi-Fi provisioning helper for ESP32-class boards. The reusable sources live both here and under `apps/ProvisioningManager/` so you can include them from a main control sketch without disturbing the lab copy. The original `labs/APwifi` sketch remains untouched for reference.
 
 ## Files
-- `apps/ProvisioningManager/ProvisioningManager.h/.cpp` — reusable provisioning component (no `.ino`, ready for integration).
+- `ProvisioningManager.h/.cpp` — reusable provisioning component (duplicated here and in `apps/ProvisioningManager/` for convenience).
 - `ProvisioningCheatSheet.md` — quick reference for configuration, HTTP endpoints, serial commands, and UDP events.
 - `examples/ProvisioningTest/ProvisioningTest.ino` — serial-friendly demo to exercise the portal.
 
 ## Using the manager in your sketch
-1. Include the header: `#include "ProvisioningManager.h"` (adjust path if used from another folder, e.g., from a sketch under `apps/...` use `#include "../ProvisioningManager/ProvisioningManager.h"`).
+1. Include the header: `#include "ProvisioningManager.h"` (adjust path if used from another folder, e.g., from `apps/...` use `#include "../ProvisioningManager/ProvisioningManager.h"`).
 2. Fill out a `ProvisioningConfig` with your AP SSID, password, LED pin, and timing preferences.
 3. Instantiate `ProvisioningManager mgr(cfg);`.
 4. Call `mgr.begin();` in `setup()` and `mgr.loop();` from `loop()`.
