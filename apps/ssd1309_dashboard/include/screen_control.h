@@ -5,7 +5,7 @@
 #include "dashboard_view.h"
 #include "../../../modules/screen_manager/include/screen_config.h"
 #include "../../../modules/screen_manager/include/screen_manager.h"
-#include "../../../ds3231/include/Ds3231Clock.h"
+#include "../../../modules/ds3231/include/Ds3231Clock.h"
 #include "../../../labs/FlashDatabase/miniFlashDataBase_v2_0/FlashLogger.h"
 
 namespace screen_control {
@@ -80,6 +80,8 @@ struct ControlContext {
   uint32_t alertShownAt = 0;
   uint32_t lastDashboardUpdateMs = 0;
   bool dataDirty = true;
+  uint32_t connectivitySuppressUntil = 0;
+  char jobTimeText[8] = {0};
 };
 
 void initialize(ControlContext& ctx,
@@ -108,6 +110,10 @@ void setVoc(ControlContext& ctx, float value);
 void setNox(ControlContext& ctx, float value);
 void setWarning(ControlContext& ctx, bool enabled, uint32_t nowMs);
 void recordConnection(ControlContext& ctx, uint32_t nowMs);
+void suppressConnectivityAlert(ControlContext& ctx, uint32_t minutes, uint32_t nowMs);
+void resumeConnectivityAlert(ControlContext& ctx, uint32_t nowMs);
+void setJobTimeText(ControlContext& ctx, const char* text);
+void clearJobTimeText(ControlContext& ctx);
 void setSsid(ControlContext& ctx, const String& ssid);
 void setUser(ControlContext& ctx, const String& userId);
 void setModel(ControlContext& ctx, const String& model);

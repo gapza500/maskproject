@@ -22,6 +22,8 @@ struct ProvisioningConfig {
     uint32_t reconnectBackoffMs;
     uint32_t portalShutdownDelayMs;
     uint16_t broadcastPort;
+    bool apStaDuringProvisioning = false;
+    uint32_t scanTimeoutMs = 300;
 };
 
 class ProvisioningManager {

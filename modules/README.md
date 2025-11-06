@@ -20,12 +20,28 @@ if (fuel.begin()) {
 }
 ```
 
-When adding a new hardware revision or board, follow the same structure:
-create a subfolder, document the pins in a README, and provide a header with
-strongly named constants inside the `board_pins` namespace.
+Each sensor/peripheral module now follows a consistent layout:
+
+- `include/` and `src/` for the lightweight C++ wrapper.
+- `examples/` for ready-to-flash demonstration sketches.
+- `checkers/` for quick hardware diagnostics you can run on the bench.
+- `tests/` for host-built assertions using the stubbed `modules/test_support/Arduino.h`
+  header (`g++ -Imodules/test_support -Imodules/<module>/include ...`).
+
+When adding a new hardware revision or module, mirror this structure: document
+the wiring in `README.md`, provide headers with clear APIs, and seed examples,
+checkers, and tests so every device can be exercised in isolation before it is
+pulled into the larger app.
 
 > Heads up: keep directory names filename-safe (lowercase + underscores) so the
 > Arduino build system can resolve the `#include` paths without issue. Legacy
 > folders with spaces are retained for reference, but new code should include
 > the sanitized paths. Adjust the relative prefix (`../../../`) to match the
 > structure of your sketch folder.
+
+## Available Modules
+
+- `max17048` — I2C fuel-gauge helper exposing state-of-charge and battery voltage.
+- `sen66` — Sensirion SEN66 particulate/temperature/humidity stub ready to wire to the official driver.
+- `flash` — Placeholder W25Q128 SPI flash store with hooks for record logging.
+- `ds3231` — Notes and integration guidance for the DS3231 real-time clock.

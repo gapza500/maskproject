@@ -156,7 +156,7 @@ void ProvisioningManager::initProvisioning(bool resetStatus) {
     WiFi.softAPdisconnect(true);
     WiFi.disconnect(true);
 
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(config.apStaDuringProvisioning ? WIFI_AP_STA : WIFI_AP);
     if (!WiFi.softAPConfig(config.localIP, config.gateway, config.subnet)) {
         Serial.println("AP Configuration failed!");
         return;
@@ -460,7 +460,7 @@ void ProvisioningManager::handleRoot() {
 void ProvisioningManager::handleScan() {
     Serial.println("Scanning networks...");
     
-    int n = WiFi.scanNetworks(false, true, false, 5000);
+    int n = WiFi.scanNetworks(false, true, false, config.scanTimeoutMs);
 
     StaticJsonDocument<3072> doc;
     JsonArray networks = doc.to<JsonArray>();
@@ -507,7 +507,9 @@ void ProvisioningManager::handleSave() {
         provisioningState = ProvisioningState::Connecting;
         provisioningMessage = "Attempting to connect...";
 
-        bool connected = connectToNetwork(newSsid, newPassword, WIFI_AP_STA);
+        bool connected = connectToNetwork(newSsid,
+                                          newPassword,
+                                          config.apStaDuringProvisioning ? WIFI_AP_STA : WIFI_STA);
 
         if (connected) {
             saveCredentials(newSsid, newPassword);

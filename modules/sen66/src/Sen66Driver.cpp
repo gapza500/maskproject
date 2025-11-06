@@ -1,5 +1,5 @@
 
-#include "Sen66Driver.h"
+#include "../include/Sen66Driver.h"
 #include <Arduino.h>
 // Replace with real Sensirion lib wiring later
 

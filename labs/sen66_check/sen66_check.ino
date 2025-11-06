@@ -3,13 +3,13 @@
 #include <SensirionErrors.h>   // Use the official errorToString()
 
 // ===== User pins (ESP32-C6 example; adjust if needed) =====
-const int I2C_SDA_PIN = 19;
-const int I2C_SCL_PIN = 20;
+const int I2C_SDA_PIN = 21;
+const int I2C_SCL_PIN = 22;
 const int VP = -1;
 
 // ===== Constants =====
 const uint8_t SEN66_ADDR = 0x6B;        // SEN6x I2C address (7-bit)
-const uint32_t I2C_SPEED_HZ = 100000;   // SEN6x supports 100 kHz only
+// const uint32_t I2C_SPEED_HZ = 100000;   // SEN6x supports 100 kHz only
 
 // ===== Objects =====
 SensirionI2cSen66 sen;
@@ -43,9 +43,9 @@ void setup() {
 
     // --- I2C init ---
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-    Wire.setClock(I2C_SPEED_HZ);
-    Serial.printf("I2C started on SDA=%d, SCL=%d @ %lu Hz\n",
-                  I2C_SDA_PIN, I2C_SCL_PIN, (unsigned long)I2C_SPEED_HZ);
+    // Wire.setClock(I2C_SPEED_HZ);
+    // Serial.printf("I2C started on SDA=%d, SCL=%d @ %lu Hz\n",
+    //               I2C_SDA_PIN, I2C_SCL_PIN, (unsigned long)I2C_SPEED_HZ);
 
     // --- Probe address ---
     if (!scanI2C(SEN66_ADDR)) {

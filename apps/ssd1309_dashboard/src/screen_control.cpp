@@ -72,10 +72,14 @@ ActiveAlert evaluateAlert(const ControlContext& ctx, uint32_t nowMs) {
     return ActiveAlert::Device;
   }
   uint32_t nowEpoch = ctx.rtc ? ctx.rtc->unixTime() : 0;
+  bool connectivitySuppressed = (ctx.connectivitySuppressUntil != 0 && nowEpoch > 0 &&
+                                 nowEpoch <= ctx.connectivitySuppressUntil);
   if (ctx.user.lastConnectionEpoch == 0 ||
       (nowEpoch > ctx.user.lastConnectionEpoch &&
        nowEpoch - ctx.user.lastConnectionEpoch > 3600)) {
-    return ActiveAlert::Connectivity;
+    if (!connectivitySuppressed) {
+      return ActiveAlert::Connectivity;
+    }
   }
   if (ctx.air.pm25 > 35.0f || ctx.air.pm10 > 80.0f) {
     return ActiveAlert::AirQuality;
@@ -202,7 +206,9 @@ void initialize(ControlContext& ctx,
   ctx.alertShown = false;
   ctx.alertShownAt = 0;
   ctx.dataDirty = true;
+  ctx.connectivitySuppressUntil = 0;
   ctx.user.lastConnectionEpoch = rtc.unixTime();
+  ctx.jobTimeText[0] = '\0';
   ctx.device.sen66Ok = true;
 
   recomputeParticulate(ctx);
@@ -342,8 +348,68 @@ void recordConnection(ControlContext& ctx, uint32_t nowMs) {
   } else {
     ctx.user.lastConnectionEpoch = kBaseEpoch + nowMs / 1000UL;
   }
+  ctx.connectivitySuppressUntil = 0;
   updateDashboard(ctx, nowMs, true);
   markAllDirty(ctx);
+}
+
+void suppressConnectivityAlert(ControlContext& ctx, uint32_t minutes, uint32_t nowMs) {
+  if (minutes == 0) {
+    minutes = 60;
+  }
+  if (minutes > 24 * 60) {
+    minutes = 24 * 60;
+  }
+  uint32_t seconds = minutes * 60UL;
+  uint32_t nowEpoch = ctx.rtc ? ctx.rtc->unixTime() : (kBaseEpoch + nowMs / 1000UL);
+  ctx.connectivitySuppressUntil = seconds ? (nowEpoch + seconds) : 0;
+  if (ctx.screen) {
+    ctx.screen->clearAlert();
+    ctx.screen->markAllDirty();
+  }
+  ctx.alertShown = false;
+  ctx.alertShownAt = 0;
+  ctx.lastAlert = ActiveAlert::None;
+  applyStatus(ctx, nowMs);
+}
+
+void resumeConnectivityAlert(ControlContext& ctx, uint32_t nowMs) {
+  ctx.connectivitySuppressUntil = 0;
+  if (ctx.screen) {
+    ctx.screen->clearAlert();
+    ctx.screen->markAllDirty();
+  }
+  ctx.alertShown = false;
+  ctx.alertShownAt = 0;
+  ctx.lastAlert = ActiveAlert::None;
+  applyStatus(ctx, nowMs);
+}
+
+void setJobTimeText(ControlContext& ctx, const char* text) {
+  if (!text || !*text) {
+    clearJobTimeText(ctx);
+    return;
+  }
+  if (strncmp(ctx.jobTimeText, text, sizeof(ctx.jobTimeText)) == 0) {
+    return;
+  }
+  strncpy(ctx.jobTimeText, text, sizeof(ctx.jobTimeText) - 1);
+  ctx.jobTimeText[sizeof(ctx.jobTimeText) - 1] = '\0';
+  if (ctx.screen) {
+    ctx.screen->setStatusValueText(3, ctx.jobTimeText);
+    ctx.screen->touch();
+  }
+}
+
+void clearJobTimeText(ControlContext& ctx) {
+  if (ctx.jobTimeText[0] == '\0') {
+    return;
+  }
+  ctx.jobTimeText[0] = '\0';
+  if (ctx.screen) {
+    ctx.screen->setStatusValueVisible(3, false);
+    ctx.screen->touch();
+  }
 }
 
 void setSsid(ControlContext& ctx, const String& ssid) {
@@ -471,7 +537,11 @@ void applyStatus(ControlContext& ctx, uint32_t nowMs) {
   bool showWarning = (newReason != ActiveAlert::None);
   screen->setStatusIcon(3, showWarning ? screen_config::IconId::Warning
                                        : screen_config::IconId::Dot);
-  screen->setStatusValueVisible(3, false);
+  if (ctx.jobTimeText[0] != '\0') {
+    screen->setStatusValueText(3, ctx.jobTimeText);
+  } else {
+    screen->setStatusValueVisible(3, false);
+  }
 
   if (ctx.alertShown) {
     if (newReason != ctx.lastAlert) {

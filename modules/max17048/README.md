@@ -16,3 +16,9 @@ Max17048 fuelGauge;
 fuelGauge.begin();
 float soc = fuelGauge.readPercent();
 ```
+
+## Supporting files
+
+- `examples/basic_usage/basic_usage.ino` — drop-in sketch streaming SOC/voltage.
+- `checkers/max17048_checker.ino` — diagnostic loop verifying gauge responses.
+- `tests/max17048_test.cpp` — host sanity test (`g++ -Imodules/test_support -Imodules/max17048 modules/max17048/tests/max17048_test.cpp -o max17048_test`).

@@ -1,7 +1,7 @@
 /*
-  W25Q64 Universal Tester for ESP32-C6 mini & Maker Feather AIoT S3
-  - Detects target (ESP32C6 / ESP32S3) at compile time
-  - Binds SPI to correct pins
+  W25Q64 Universal Tester for ESP32 dev boards
+  - Detects target (ESP32 DevKit v1 / ESP32C6 / ESP32S3) at compile time
+  - Binds SPI to correct pins (override with FLASH_CHECK_PIN_* macros if needed)
   - Powers S3 peripheral rail (VP_EN)
   - JEDEC ID -> sector erase -> page program -> verify
 */
@@ -12,26 +12,55 @@
 // ===================== Board Profiles (auto) =====================
 #if defined(CONFIG_IDF_TARGET_ESP32S3)
 // --- Maker Feather AIoT S3 ---
-static const int PIN_FLASH_SCK   = 17;   // SCK
-static const int PIN_FLASH_MISO  = 18;   // MISO
-static const int PIN_FLASH_MOSI  = 8;    // MOSI
-static const int PIN_FLASH_CS    = 7;    // CS
-static const int PIN_VPERIPH_EN  = 11;   // VP_EN (power rail)
+#define FLASH_CHECK_PIN_SCK_DEFAULT    17
+#define FLASH_CHECK_PIN_MISO_DEFAULT   18
+#define FLASH_CHECK_PIN_MOSI_DEFAULT    8
+#define FLASH_CHECK_PIN_CS_DEFAULT      7
+#define FLASH_CHECK_PIN_VPERIPH_DEFAULT 11
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
 // --- ESP32-C6 mini (your earlier wiring) ---
-static const int PIN_FLASH_SCK   = 17;   // SCK (match your header silk)
-static const int PIN_FLASH_MISO  = 18;   // MISO
-static const int PIN_FLASH_MOSI  = 8;    // MOSI
-static const int PIN_FLASH_CS    = 4;    // CS (as used in your C6 sketch)
-static const int PIN_VPERIPH_EN  = -1;   // no rail enable on your C6 board
+#define FLASH_CHECK_PIN_SCK_DEFAULT    17
+#define FLASH_CHECK_PIN_MISO_DEFAULT   18
+#define FLASH_CHECK_PIN_MOSI_DEFAULT    8
+#define FLASH_CHECK_PIN_CS_DEFAULT      4
+#define FLASH_CHECK_PIN_VPERIPH_DEFAULT -1
+#elif defined(CONFIG_IDF_TARGET_ESP32)
+// --- ESP32 DevKit v1 ---
+#define FLASH_CHECK_PIN_SCK_DEFAULT    18
+#define FLASH_CHECK_PIN_MISO_DEFAULT   19
+#define FLASH_CHECK_PIN_MOSI_DEFAULT   23
+#define FLASH_CHECK_PIN_CS_DEFAULT      5
+#define FLASH_CHECK_PIN_VPERIPH_DEFAULT -1
 #else
 #warning "Unknown ESP32 target. Defaulting to S3 mapping. Adjust pins below."
-static const int PIN_FLASH_SCK   = 17;
-static const int PIN_FLASH_MISO  = 18;
-static const int PIN_FLASH_MOSI  = 8;
-static const int PIN_FLASH_CS    = 7;
-static const int PIN_VPERIPH_EN  = -1;
+#define FLASH_CHECK_PIN_SCK_DEFAULT    17
+#define FLASH_CHECK_PIN_MISO_DEFAULT   18
+#define FLASH_CHECK_PIN_MOSI_DEFAULT    8
+#define FLASH_CHECK_PIN_CS_DEFAULT      7
+#define FLASH_CHECK_PIN_VPERIPH_DEFAULT -1
 #endif
+
+#ifndef FLASH_CHECK_PIN_SCK
+#define FLASH_CHECK_PIN_SCK FLASH_CHECK_PIN_SCK_DEFAULT
+#endif
+#ifndef FLASH_CHECK_PIN_MISO
+#define FLASH_CHECK_PIN_MISO FLASH_CHECK_PIN_MISO_DEFAULT
+#endif
+#ifndef FLASH_CHECK_PIN_MOSI
+#define FLASH_CHECK_PIN_MOSI FLASH_CHECK_PIN_MOSI_DEFAULT
+#endif
+#ifndef FLASH_CHECK_PIN_CS
+#define FLASH_CHECK_PIN_CS FLASH_CHECK_PIN_CS_DEFAULT
+#endif
+#ifndef FLASH_CHECK_PIN_VPERIPH
+#define FLASH_CHECK_PIN_VPERIPH FLASH_CHECK_PIN_VPERIPH_DEFAULT
+#endif
+
+static const int PIN_FLASH_SCK   = FLASH_CHECK_PIN_SCK;    // SCK
+static const int PIN_FLASH_MISO  = FLASH_CHECK_PIN_MISO;   // MISO
+static const int PIN_FLASH_MOSI  = FLASH_CHECK_PIN_MOSI;   // MOSI
+static const int PIN_FLASH_CS    = FLASH_CHECK_PIN_CS;     // CS
+static const int PIN_VPERIPH_EN  = FLASH_CHECK_PIN_VPERIPH; // power rail (if available)
 
 // ===== SPI settings =====
 static const uint32_t SPI_HZ = 10'000'000; // 10 MHz

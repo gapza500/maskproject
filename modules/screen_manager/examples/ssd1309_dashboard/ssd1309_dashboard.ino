@@ -6,11 +6,11 @@
 
 #include "../../../../apps/ssd1309_dashboard/include/screen_control.h"
 #include "../../../../apps/ssd1309_dashboard/include/screen_serial.h"
-#include "../../../dfrobot_beetle_esp32c6_mini/pins_dfrobot_beetle_esp32c6_mini.h"
+#include "../../../esp32_devkit_v1/pins_esp32_devkit_v1.h"
 #include "../../../../labs/FlashDatabase/miniFlashDataBase_v2_0/FlashLogger.h"
 
-using board_pins::dfrobot_beetle_esp32c6_mini::I2C_SCL_PIN;
-using board_pins::dfrobot_beetle_esp32c6_mini::I2C_SDA_PIN;
+using board_pins::esp32_devkit_v1::I2C_SCL_PIN;
+using board_pins::esp32_devkit_v1::I2C_SDA_PIN;
 
 U8G2_SSD1309_128X64_NONAME0_F_HW_I2C u8g2(
     U8G2_R0, U8X8_PIN_NONE, I2C_SCL_PIN, I2C_SDA_PIN);

@@ -124,8 +124,14 @@ void DashboardView::drawSummaryPage(screen_config::BackendType& backend, int16_t
   }
   float span = maxSample - minSample;
   if (span < 0.5f) {
+    float mid = (minSample + maxSample) * 0.5f;
     span = 0.5f;
-    maxSample = minSample + span;
+    minSample = mid - span * 0.5f;
+    maxSample = mid + span * 0.5f;
+    if (minSample < 0.0f) {
+      maxSample -= minSample;
+      minSample = 0.0f;
+    }
   }
 
   float lastX = static_cast<float>(graphLeft);
@@ -295,4 +301,3 @@ void DashboardView::formatClock(uint32_t epochSeconds, char* buffer) {
 }
 
 }  // namespace dashboard_view
-

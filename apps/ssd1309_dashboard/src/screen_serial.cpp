@@ -20,6 +20,8 @@ void printHelp() {
   Serial.println(F("  voc <ppm>"));
   Serial.println(F("  nox <ppm>"));
   Serial.println(F("  warn on|off"));
+  Serial.println(F("  alert ack [minutes]"));
+  Serial.println(F("  alert resume"));
   Serial.println(F("  dash summary|detail"));
   Serial.println(F("  connect"));
   Serial.println(F("  ssid <name>"));
@@ -179,6 +181,30 @@ bool handleCommand(ControlContext& ctx, const String& cmd, uint32_t nowMs) {
     return true;
   }
 
+  if (cmd.startsWith("alert ack")) {
+    uint32_t minutes = 60;
+    int spaceIdx = cmd.indexOf(' ', 9);
+    if (spaceIdx >= 0) {
+      String arg = cmd.substring(spaceIdx + 1);
+      arg.trim();
+      if (!arg.isEmpty()) {
+        minutes = static_cast<uint32_t>(arg.toInt());
+        if (minutes == 0) minutes = 60;
+      }
+    }
+    suppressConnectivityAlert(ctx, minutes, nowMs);
+    Serial.print(F("Connectivity alert suppressed for "));
+    Serial.print(minutes);
+    Serial.println(F(" minutes."));
+    return true;
+  }
+
+  if (cmd == "alert resume") {
+    resumeConnectivityAlert(ctx, nowMs);
+    Serial.println(F("Connectivity alert monitoring resumed."));
+    return true;
+  }
+
   if (cmd == "connect") {
     recordConnection(ctx, nowMs);
     Serial.println(F("Connection timestamp updated."));
@@ -215,4 +241,3 @@ bool handleCommand(ControlContext& ctx, const String& cmd, uint32_t nowMs) {
 }
 
 }  // namespace screen_serial
-
